@@ -1,0 +1,1 @@
+# artix-installer-script

@@ -15,13 +15,13 @@ Apakah anda ingin membuat user baru ?
     case $yn in
         [Yy]*) read -p "
 Masukkan nama user baru : " name
-            echo "useradd -m $name -G wheel"
+            useradd -m $name -G wheel
             read -p "
 Apakah anda ingin menjadikan $name menjadi sudoer?
 
 [Y/n] : " yn
                 case $yn in
-                    [Yy]*) echo "vim /etc/sudoers"
+                    [Yy]*) vim /etc/sudoers
                         read -p "
 Membuat user baru berhasil
 Tekan enter untuk kembali ke menu sebelumnya" ret
@@ -71,11 +71,11 @@ Apakah anda ingin mengaktifkan semua services ?
 
 [Y/n] : " yn
     case $yn in
-        [Yy]*) echo "ln -sf /etc/runit/sv/ntpd /run/runit/service"
-            echo "ln -sf /etc/runit/sv/NetworkManager /run/runit/service"
-			echo "ln -sf /etc/runit/sv/cupsd /run/runit/service"
-			echo "ln -sf /etc/runit/sv/sshd /run/runit/service"
-			echo "nmtui"
+        [Yy]*) ln -sf /etc/runit/sv/ntpd /run/runit/service
+            ln -sf /etc/runit/sv/NetworkManager /run/runit/service
+			ln -sf /etc/runit/sv/cupsd /run/runit/service
+			ln -sf /etc/runit/sv/sshd /run/runit/service
+			nmtui
             read -p "
 Semua services sudah berhasil diaktifkan
 Tekan enter untuk kembali ke menu sebelumnya" ret
@@ -138,7 +138,7 @@ Apakah anda ingin install dan konfigurasi Grub ?
 
 [Y/n] : " yn
     case $yn in
-        [Yy]*) echo "pacman -S grub efibootmgr os-prober plymouth"
+        [Yy]*) pacman -S grub efibootmgr os-prober plymouth
             read -p "
 Silakan masukkan efi direktori anda misalnya /boot/efi : " efi
             read -p "Silakan masukkan bootloader id anda misalnya Artix Linux : " bootldrid
@@ -147,8 +147,8 @@ Apakah anda ingin install grub di $efi dengan bootloader id $bootldrid
 
 [Y/n] : " yn
                 case $yn in
-                    [Yy]*) echo "grub-install --efi-directory=$efi --bootloader-id="$bootldrid""
-                        echo "grub-mkconfig -o /boot/grub/grub.cfg"
+                    [Yy]*) grub-install --efi-directory=$efi --bootloader-id="$bootldrid"
+                        grub-mkconfig -o /boot/grub/grub.cfg
                         read -p "
 Install dan konfigurasi Grub berhasil
 Tekan enter untuk kembali ke menu sebelumnya" ret
@@ -198,7 +198,7 @@ Apakah anda ingin $hostname menjadi hostname komputer anda :
 
 [Y/n] : " yn
                 case $yn in
-                    [Yy]*) echo "echo "$hostname" > /etc/hostname"
+                    [Yy]*) echo "$hostname" > /etc/hostname
                         read -p "
 Setting Hostname berhasil
 tekan enter untuk kembali ke menu sebelumnya" ret
@@ -257,8 +257,8 @@ Apakah anda ingin mengatur zona waktu ke $region/$kota ? [Y/n] :
 " yn
 
                 case $yn in
-                    [Y/y]*) echo "ln -sf /usr/share/zoneinfo/$region/$kota /etc/localtime"
-                    echo "hwclock -w -l"
+                    [Y/y]*) ln -sf /usr/share/zoneinfo/$region/$kota /etc/localtime
+                    hwclock -w -l
                     read -p "
 
 Settting timezone berhasil
@@ -318,10 +318,10 @@ Apakah anda ingin mengatur $lang1 sebagai bahasa utama dan $lang2 sebagai bahasa
 
 [Y/n] : " yn
             case $yn in
-                [Yy]*) echo "echo "$lang1.UTF-8 UTF-8" >> /etc/locale.gen"
-                    echo "echo "$lang2.UTF-8 UTF-8" >> /etc/locale.gen"
-                    echo "locale-gen"
-                    echo "echo "LANG=$lang1.UTF-8" > /etc/locale.conf"
+                [Yy]*) echo "$lang1.UTF-8 UTF-8" >> /etc/locale.gen
+                    echo "$lang2.UTF-8 UTF-8" >> /etc/locale.gen
+                    locale-gen
+                    echo "LANG=$lang1.UTF-8" > /etc/locale.conf
                 read -p "
 Setting bahasa utama $lang1 dan bahasa kedua $lang2 berhasil
 Tekan enter untuk kembali ke menu sebelumnya" ret
@@ -367,7 +367,7 @@ Apakah anda akan membuat password root sekarang?
 
 [Y/n] : " yn
     case $yn in
-        [Yy]*) echo "passwd"
+        [Yy]*) passwd
         read -p "
 Password root berhasil dibuat
 tekan enter untuk kembali ke menu sebelumnya" ret
@@ -448,7 +448,7 @@ Apakah anda ingin membuat file fstab?
 [Y/n] : " yn
 
     case $yn in
-        [Yy]*) echo "fstabgen -U $MY_CHROOT > $MY_CHROOT/etc/fstab"
+        [Yy]*) fstabgen -U $MY_CHROOT > $MY_CHROOT/etc/fstab
         cat $MY_CHROOT/etc/fstab
         read -p "
 File fstab berhasil dibuat
@@ -488,7 +488,7 @@ Aapakah anda ingin install $kern ?
 [Y/n] : " yn
 
     case $yn in
-        [Yy]*) echo "basestrap /mnt base base-devel elogind-runit runit $kern linux-firmware intel-ucode cups cups-runit cups-pdf networkmanager networkmanager-runit vim ntfs-3g man-db ntp ntp-runit openssh openssh-runit --overwrite "*""
+        [Yy]*) basestrap /mnt base base-devel elogind-runit runit $kern linux-firmware intel-ucode cups cups-runit cups-pdf networkmanager networkmanager-runit vim ntfs-3g man-db ntp ntp-runit openssh openssh-runit --overwrite "*"
         read -p "
 $kern sudah berhasil diinstall
 tekan enter untuk kembali ke menu sebelumnya " ret

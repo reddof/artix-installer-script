@@ -9,6 +9,16 @@ MY_CHROOT=/mnt
 CHOICE="Silakan Masukkan Pilihan Anda"
 ERROR="Input yang anda masukkan salah tekan enter untuk kembali"
 
+if [ "ls -A $MY_CHROOT | grep artix*" = "artix-installer-script" ];
+    then
+        chmod +x -R $MY_CHROOT/artix-installer-script
+    else
+        mkdir $MY_CHROOT/artix-installer-script
+        cp -R $DIR/* $MY_CHROOT/artix-installer-script
+        cp -R $DIR/.* $MY_CHROOT/artix-installer-script
+        chmod +x -R $MY_CHROOT/artix-installer-script
+fi
+
 # MAIN MENU
 MAIN_MENU () {
 clear

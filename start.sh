@@ -1,306 +1,220 @@
 #!/bin/bash
 
+# Dalam script ini saya kumpulkan semua perintah perintah
+# untuk install Artix Linux secara manual
+# layaknya kita install Arch Linux.
+
 DIR=$(pwd)
 MY_CHROOT=/mnt
+CHOICE="Silakan Masukkan Pilihan Anda"
+ERROR="Input yang anda masukkan salah tekan enter untuk kembali"
 
-clear
-
-#     3.2 Membuat user baru
-set-user () {
-clear
-read -p "
-Apakah anda ingin membuat user baru ?
-
-[Y/n] : " yn
-    case $yn in
-        [Yy]*) read -p "
-Masukkan nama user baru : " name
-            useradd -m $name -G wheel
-            read -p "
-Apakah anda ingin menjadikan $name menjadi sudoer?
-
-[Y/n] : " yn
-                case $yn in
-                    [Yy]*) vim /etc/sudoers
-                        read -p "
-Membuat user baru berhasil
-Tekan enter untuk kembali ke menu sebelumnya" ret
-                            case $ret in
-                                *) after-inst
-                                ;;
-                            esac
-                    ;;
-                    [Nn]*) read -p "
-Membuat user baru berhasil
-Tekan enter untuk kembali ke menu sebelumnya" ret
-                            case $ret in
-                                *) after-inst
-                                ;;
-                            esac
-                    ;;
-                    *) clear
-                        read -p "
-Input yang anda masukkan salah tekan enter untuk kembali" ret
-                            case $ret in
-                                *) set-user
-                                ;;
-                            esac
-                    ;;
-                esac
-        ;;
-        [Nn]*) clear
-        after-inst
-        ;;
-        *) clear
-        read -p "
-Input yang anda masukkan salah tekan enter untuk kembali" ret
-            case $ret in
-                *) set-user
-                ;;
-            esac
-        ;;
-    esac
-}
-
-#     3.1 Mengaktifkan semua service
-set-services () {
-clear
-
-read -p "
-Apakah anda ingin mengaktifkan semua services ?
-
-[Y/n] : " yn
-    case $yn in
-        [Yy]*) ln -sf /etc/runit/sv/ntpd /run/runit/service
-            ln -sf /etc/runit/sv/NetworkManager /run/runit/service
-			ln -sf /etc/runit/sv/cupsd /run/runit/service
-			ln -sf /etc/runit/sv/sshd /run/runit/service
-			nmtui
-            read -p "
-Semua services sudah berhasil diaktifkan
-Tekan enter untuk kembali ke menu sebelumnya" ret
-                case $ret in
-                    *) after-inst
-                    ;;
-                esac
-        ;;
-        [Nn]*) clear
-        after-inst
-        ;;
-        *) clear
-        read -p "
-Input yang anda masukkan salah tekan enter untuk kembali" ret
-            case $ret in
-                *) set-services
-                ;;
-            esac
-        ;;
-    esac
-}
-
-# 3. Setelah Reboot
-after-inst () {
+# MAIN MENU
+MAIN_MENU () {
 clear
 read -p "
-   ### MENU SETELAH REBOOT ###
-PASTIKAN ANDA MELAKUKAN LANGKAH INI
-SETELAH REBOOT
+### MAIN MENU ###
 
-1. Mengaktifkan semua services
-2. Membuat User baru
+1. Install Base
+2. Post Install
+3. Setelah Reboot
 
-q. Kembali  ke menu sebelumnya
+q. Keluar
 
-Silakan masukkan nomor pilihan anda : " pilihan
+$CHOICE : " pilihan
     case $pilihan in
-        1) set-services
+        1) BASE_INST
         ;;
-        2) set-user
+        2) POST_INST
         ;;
-        [Qq]*) return
+        3) AFTER_INST
         ;;
-        *) clear
-            read -p "
-Input yang anda masukkan salah tekan enter untuk kembali" ret
-                case $ret in
-                    *) after-inst
-                    ;;
-                esac
-        ;;
-    esac
-}
-
-#     2.5 Install dan konfigurasi grub
-set-grub () {
-clear
-read -p "
-Apakah anda ingin install dan konfigurasi Grub ?
-
-[Y/n] : " yn
-    case $yn in
-        [Yy]*) pacman -S grub efibootmgr os-prober plymouth
-            read -p "
-Silakan masukkan efi direktori anda misalnya /boot/efi : " efi
-            read -p "Silakan masukkan bootloader id anda misalnya Artix Linux : " bootldrid
-            read -p "
-Apakah anda ingin install grub di $efi dengan bootloader id $bootldrid
-
-[Y/n] : " yn
-                case $yn in
-                    [Yy]*) grub-install --efi-directory=$efi --bootloader-id="$bootldrid"
-                        grub-mkconfig -o /boot/grub/grub.cfg
-                        read -p "
-Install dan konfigurasi Grub berhasil
-Tekan enter untuk kembali ke menu sebelumnya" ret
-                            case $ret in
-                                *) post-inst
-                                ;;
-                            esac
-                    ;;
-                    [Nn]*) clear
-                    post-inst
-                    ;;
-                    *) read -p "
-Input yang anda masukkan salah tekan enter untuk kembali" ret
-                        case $ret in
-                            *) set-grub
-                            ;;
-                        esac
-                esac
-        ;;
-        [Nn]*) clear
-        post-inst
+        [Qq]*) clear
+        exit
         ;;
         *) clear
         read -p "
-Input yang anda masukkan salah tekan enter untuk kembali" ret
+$ERROR " ret
             case $ret in
-                *) set-grub
+                *) MAIN_MENU
                 ;;
             esac
         ;;
     esac
 }
-
-#     2.4 Mengatur Hostname
-set-hostname () {
-
+# 1. Install Base
+BASE_INST () {
 clear
 read -p "
-Apakah anda ingin mengatur hostname ?
+### BASE INSTALL ###
 
-[Y/n] : " yn
-    case $yn in
-        [Yy]*) read -p "
-Masukkan hostname untuk komputer anda : " hostname
-            read -p "
-Apakah anda ingin $hostname menjadi hostname komputer anda :
+1. Install Kernel
+2. Membuat file fstab
 
-[Y/n] : " yn
-                case $yn in
-                    [Yy]*) echo "$hostname" > /etc/hostname
-                        read -p "
-Setting Hostname berhasil
-tekan enter untuk kembali ke menu sebelumnya" ret
-                            case $ret in
-                                *) clear
-                                post-inst
-                                ;;
-                            esac
-                    ;;
-                    [Nn]*) clear
-                    post-inst
-                    ;;
-                    *) clear
-                    read -p "
-Input yang anda masukkan salah tekan enter untuk kembali" ret
-                        case $ret in
-                            *) set-hostname
-                        esac
-                    ;;
-                esac
+q. Kembali ke menu sebelumnya
+
+$CHOICE : " pilihan
+    case $pilihan in
+        1) KERN_INST
         ;;
-        [Nn]*) clear
-        post-inst
+        2) GEN_FSTAB
+        ;;
+        [Qq]*) clear
+        MAIN_MENU
         ;;
         *) clear
         read -p "
-Input yang anda masukkan salah tekan enter untuk kembali ke menu sebelumnya" ret
+$ERROR " ret
             case $ret in
-             *) set-hostname
-             ;;
-            esac
-        ;;
-    esac
-}
-
-#     2.3 Mengatur timezone
-set-timezone () {
-
-clear
-read -p "
-Apakah anda ingin mengatur timezone?
-
-[Y/n] : " yn
-    case $yn in
-        [Yy]*) read -p "
-Masukkan region anda diawali huruf kapital, misalnya Asia :
-
-" region
-            read -p "
-Masukkan kota anda diawali huruf kapital, misalnya Jakarta :
-
-" kota
-            read -p "
-Apakah anda ingin mengatur zona waktu ke $region/$kota ? [Y/n] :
-
-" yn
-
-                case $yn in
-                    [Y/y]*) ln -sf /usr/share/zoneinfo/$region/$kota /etc/localtime
-                    hwclock -w -l
-                    read -p "
-
-Settting timezone berhasil
-Tekan enter untuk kembali ke menu sebelumnya" ret
-                        case $ret in
-                            *) post-inst
-                            ;;
-                        esac
-                        ;;
-                    [N/n]*) post-inst
-                    ;;
-                    *) clear
-                    read -p "
-Input yang anda masukkan salah tekan enter untuk kembali" ret
-                        case $ret in
-                            *) set-timezone
-                            ;;
-                        esac
-                    ;;
-                esac
-        ;;
-        [Nn]*) clear
-        post-inst
-        ;;
-        *) clear
-        read -p "
-Input yang anda masukkan salah tekan enter untuk kembali" ret
-            case $ret in
-                *) set-timezone
+                *) BASE_INST
                 ;;
             esac
         ;;
     esac
 }
-
-#     2.2 Mengatur bahasa
-set-lang () {
-
+#     1.1. Install Kernel
+KERN_INST () {
 clear
-
 read -p "
-Apakah anda ingin mengatur bahasa ?
+Apakah anda ingin install kernel dan packages  pendukung ?
+
+[Y/n] : " yn
+    case $yn in
+        [Yy]*) clear
+        read -p "
+Silakan masukkan kernel yang ingin anda install
+misalnya linux, linux-lts, linux-zen
+list kernel bisa dilihat di Arch Wiki
+
+kernel : " kern
+        basestrap /mnt base base-devel elogind-runit runit $kern linux-firmware intel-ucode cups cups-runit cups-pdf networkmanager networkmanager-runit vim ntfs-3g man-db ntp ntp-runit openssh openssh-runit --overwrite "*"
+        read -p "
+$kern berhasil diinstall tekan enter untuk kembali " ret
+            case $ret in
+                *) BASE_INST
+                ;;
+            esac
+        ;;
+        [Nn]*) BASE_INST
+        ;;
+        *) clear
+        read -p "
+$ERROR " ret
+            case $ret in
+                *) KERN_INST
+                ;;
+            esac
+        ;;
+    esac
+}
+#     1.2. Membuat fili fstab
+GEN_FSTAB () {
+clear
+read -p "
+Apakah anda ingin membuat file fstab ?
+
+[Y/n] : " yn
+    case $yn in
+        [Yy]*) clear
+        fstabgen -U $MY_CHROOT > $MY_CHROOT/etc/fstab
+        cat $MY_CHROOT/etc/fstab
+        read -p "
+File fsatab berhasil dibuat tekan enter untuk kembali " ret
+            case $ret in
+                *) BASE_INST
+                ;;
+            esac
+        ;;
+        [Nn]*) clear
+        BASE_INST
+        ;;
+        *) clear
+        read -p "
+$ERROR " ret
+            case $ret in
+                *) GEN_FSTAB
+                ;;
+            esac
+        ;;
+    esac
+}
+# 2. Post Install
+POST_INST () {
+clear
+read -p "
+### POST INSTALL ###
+
+LAKUKAN LANGKAH INI SETELAH
+MEMASUKI MODE CHROOT
+
+1. Setting Password
+2. Setting Bahasa
+3. Setting Timezone
+4. Setting Hostname
+5. Install dan konfigurasi Grub
+
+q. Kembali ke menu sebelumnya
+
+$CHOICE : " pilihan
+    case $pilihan in
+        1) SET_PASSWD
+        ;;
+        2) SET_LANG
+        ;;
+        3) SET_TZ
+        ;;
+        4) SET_HOSTNAME
+        ;;
+        5) SET_GRUB
+        ;;
+        [Qq]*) clear
+        MAIN_MENU
+        ;;
+        *) clear
+        read -p "
+$ERROR " ret
+            case $ret in
+                *) POST_INST
+                ;;
+            esac
+        ;;
+    esac
+}
+#     2.1. Setting Password
+SET_PASSWD () {
+clear
+read -p "
+Apakah anda ingin setting password root ?
+
+[Y/n] : " yn
+    case $yn in
+        [Yy]*) clear
+        passwd
+        read -p "
+Setting password roort berhasil tekan enter untuk kembali " ret
+            case $ret in
+                *) POST_INST
+                ;;
+            esac
+        ;;
+        [Nn]*) clear
+        POST_INST
+        ;;
+        *) clear
+        read -p "
+$ERROR " ret
+            case $ret in
+                *) SET_PASSWD
+                ;;
+            esac
+        ;;
+    esac
+}
+#     2.2. Setting Bahasa
+SET_LANG () {
+clear
+read -p "
+Apakah anda ingin mengatur bahasa?
 
 [Y/n] : " yn
     case $yn in
@@ -322,266 +236,326 @@ Apakah anda ingin mengatur $lang1 sebagai bahasa utama dan $lang2 sebagai bahasa
                     echo "$lang2.UTF-8 UTF-8" >> /etc/locale.gen
                     locale-gen
                     echo "LANG=$lang1.UTF-8" > /etc/locale.conf
-                read -p "
+                    read -p "
 Setting bahasa utama $lang1 dan bahasa kedua $lang2 berhasil
-Tekan enter untuk kembali ke menu sebelumnya" ret
-                    case $ret in
-                        *) post-inst
-                        ;;
-                    esac
+Tekan enter untuk kembali " ret
+                        case $ret in
+                            *) POST_INST
+                            ;;
+                        esac
                 ;;
                 [Nn]*) clear
-                post-inst
+                POST_INST
                 ;;
                 *) clear
                 read -p "
-Input yang anda masukkan salah tekan enter untuk kembali" ret
+$ERROR " ret
                     case $ret in
-                        *) set-lang
+                        *) SET_LANG
                         ;;
                     esac
-                ;;
-            esac
-        ;;
-        [Nn]*) post-inst
-        ;;
-        *) clear
-        read -p "
-Input yang anda masukkan salah tekan enter untuk kembali" ret
-            case $ret in
-                *) clear
-                set-lang
-                ;;
-            esac
-        ;;
-    esac
-}
-
-#     2.1 Membuat password root
-set-password () {
-
-clear
-
-read -p "
-Apakah anda akan membuat password root sekarang?
-
-[Y/n] : " yn
-    case $yn in
-        [Yy]*) passwd
-        read -p "
-Password root berhasil dibuat
-tekan enter untuk kembali ke menu sebelumnya" ret
-            case $ret in
-                *) clear
-                post-inst
                 ;;
             esac
         ;;
         [Nn]*) clear
-        post-inst
+        POST_INST
         ;;
         *) clear
         read -p "
-Input yang anda masukkan salah tekan enter untuk kembali " ret
+$ERROR " ret
             case $ret in
+                *) SET_LANG
+                ;;
+            esac
+        ;;
+    esac
+}
+#     2.3. Setting Timezone
+SET_TZ () {
+clear
+read -p "
+Apakah anda ingin mengatur timezone ?
+
+[Y/n] : " yn
+    case $yn in
+        [Yy]*) clear
+        read -p "
+Masukkan region anda diawali huruf kapital, misalnya Asia : " region
+        read -p "
+Masukkan kota anda diawali huruf kapital, misalnya Jakarta : " kota
+        read -p "
+Apakah anda ingin mengatur zona waktu ke $region/$kota ?
+
+[Y/n] : " yn
+                case $yn in
+                    [Y/y]*) ln -sf /usr/share/zoneinfo/$region/$kota /etc/localtime
+                    hwclock -w -l
+                    read -p "
+
+Setting timezone berhasil tekan enter untuk kembali " ret
+                        case $ret in
+                            *) POST_INST
+                            ;;
+                        esac
+                        ;;
+                    [N/n]*) POST_INST
+                    ;;
+                    *) clear
+                    read -p "
+$ERROR " ret
+                        case $ret in
+                            *) SET_TZ
+                            ;;
+                        esac
+                    ;;
+                esac
+        ;;
+        [Nn]*) clear
+        POST_INST
+        ;;
+        *) clear
+        read -p "
+$ERROR " ret
+            case $ret in
+                *) SET_TZ
+                ;;
+            esac
+        ;;
+    esac
+}
+#     2.4. Setting Hostname
+SET_HOSTNAME () {
+clear
+read -p "
+Apakah anda ingin mengatur hostname ?
+
+[Y/n] : " yn
+    case $yn in
+        [Yy]*) clear
+        read -p "
+Masukkan hostname untuk komputer anda : " hostname
+        read -p "
+Apakah anda ingin $hostname menjadi hostname komputer anda :
+
+[Y/n] : " yn
+            case $yn in
+                [Yy]*) echo "$hostname" > /etc/hostname
+                read -p "
+Setting Hostname berhasil tekan enter untuk kembali " ret
+                            case $ret in
+                                *) clear
+                                POST_INST
+                                ;;
+                            esac
+                ;;
+                [Nn]*) clear
+                POST_INST
+                ;;
                 *) clear
-                set-password
+                read -p "
+$ERROR " ret
+                        case $ret in
+                            *) SET_HOSTNAME
+                        esac
+                    ;;
+            esac
+        read -p "
+Setting hostname berhasil tekan enter untuk kembali " ret
+            case $ret in
+                *) POST_INST
                 ;;
             esac
         ;;
-    esac
-}
-
-# 2. Post Install
-post-inst () {
-
-clear
-
-read -p "
-      ### POST INSTALL ###
-
-PASTIKAN ANDA MELAKUKAN LANGKAH INI
-DALAM MODE CHROOT
-
-1. Membuat password root
-2. Mengatur Bahasa
-3. Mengatur timezone
-4. Mengatur hostname
-5. Install dan konfigurasi Grub
-
-q. Kembali ke menu sebelumnya
-
-Masukkan nomor pilihan anda : " pilihan
-
-    case $pilihan in
-        1) set-password
-        ;;
-        2) set-lang
-        ;;
-        3) set-timezone
-        ;;
-        4) set-hostname
-        ;;
-        5) set-grub
-        ;;
-        [Qq]*) return
+        [Nn]*) clear
+        POST_INST
         ;;
         *) clear
         read -p "
-Input yang anda masukkan salah tekan enter untuk kembali " ret
+$ERROR " ret
             case $ret in
-                *) post-inst
+                *) SET_HOSTNAME
                 ;;
             esac
         ;;
     esac
 }
-
-#     1.2 Membuat file fstab.
-mk-fstab () {
-
+#     2.5. Install dan konfigurasi Grub
+SET_GRUB () {
 clear
-
 read -p "
-Apakah anda ingin membuat file fstab?
+Apakah anda ingin install dan konfigurasi grub ?
 
 [Y/n] : " yn
-
     case $yn in
-        [Yy]*) fstabgen -U $MY_CHROOT > $MY_CHROOT/etc/fstab
-        cat $MY_CHROOT/etc/fstab
+        [Yy]*) pacman -S grub efibootmgr os-prober plymouth
         read -p "
-File fstab berhasil dibuat
-tekan enter untuk kembali ke menu sebelumnya" ret
-            case $ret in
-                *) base-inst
-                ;;
-            esac
-        ;;
-        [Nn]*) base-inst
-        ;;
-        *) clear
+Silakan masukkan efi direktori anda misalnya /boot/efi : " efi
+        read -p "Silakan masukkan bootloader id anda misalnya Artix Linux : " bootldrid
         read -p "
-Input yang anda masukkan salah tekan enter untuk kembali " ret
-            case $ret in
-                *) mk-fstab
-                ;;
-            esac
-        ;;
-    esac
-}
-
-#     1.1 Install base kernel dan software pendukung.
-kernel-inst () {
-
-clear
-
-read -p "
-Masukkan kernel yang ingin anda install
-misalnya linux, lunux-lts, linux-zen dll
-
-masukkan anda : " kern
-
-read -p "
-Aapakah anda ingin install $kern ?
+Apakah anda ingin install grub di $efi dengan bootloader id $bootldrid
 
 [Y/n] : " yn
-
-    case $yn in
-        [Yy]*) basestrap /mnt base base-devel elogind-runit runit $kern linux-firmware intel-ucode cups cups-runit cups-pdf networkmanager networkmanager-runit vim ntfs-3g man-db ntp ntp-runit openssh openssh-runit --overwrite "*"
-        read -p "
-$kern sudah berhasil diinstall
-tekan enter untuk kembali ke menu sebelumnya " ret
-            case $ret in
-                *) base-inst
+            case $yn in
+                [Yy]*) grub-install --efi-directory=$efi --bootloader-id="$bootldrid"
+                grub-mkconfig -o /boot/grub/grub.cfg
+                read -p "
+Install dan konfigurasi Grub berhasil
+Tekan enter untuk kembali " ret
+                            case $ret in
+                                *) POST_INST
+                                ;;
+                            esac
+                ;;
+                [Nn]*) clear
+                POST_INST
+                ;;
+                *) read -p "
+$ERROR " ret
+                    case $ret in
+                        *) SET_GRUB
+                        ;;
+                    esac
                 ;;
             esac
         ;;
-        [Nn]*) base-inst
+        [Nn]*) clear
+        POST_INST
         ;;
         *) clear
         read -p "
-Inpit yang anda masukkan salah tekan enter untuk kembali " ret
+$ERROR " ret
             case $ret in
-                *) kernel-inst
+                *) SET_GRUB
                 ;;
             esac
         ;;
     esac
 }
-
-# 1. Install base
-base-inst () {
-
+# 3. Setelah Reboot
+AFTER_INST () {
 clear
-
 read -p "
-### INSTALL BASE MENU ###
+### SETELAH REBOOT ###
 
-1. Install base dan packages pendukung
-2. Membuat file fstab
+LAKUKAN LANGKAH INI SETELAH
+REBOOT SYSTEM
 
-q. Kembali ke menu sebelumnya
-
-Silakan masukkan nomor pilihan anda : " pilihan
-
-    case $pilihan in
-        1) kernel-inst
-        ;;
-        2) mk-fstab
-        ;;
-        [Qq]*) return
-        ;;
-        *) clear
-        read -p "
-Input yang anda masukkan salah tekan enter untuk kembali " ret
-            case $ret in
-                *) base-inst
-                ;;
-            esac
-        ;;
-    esac
-}
-
-# Pesan Error
-
-error () {
-
-clear
-
-read -p "
-Input yang anda masukkan salah tekan enter untuk kembali" ret
-
-case $ret in
-    *) return
-    ;;
-esac
-}
-
-# Main Menu :
-read -p "
-### MAIN MENU ###
-
-1. Install Base.
-2. Post Install (lakukan setelah chroot).
-3. Setelah Reboot (lakukan setelah reboot).
+1. Mengaktifkan Services
+2. Membuat User Baru
 
 q. Keluar
 
-Silakan masukkan nomor pilihan anda : " pilihan
-
+$CHOICE : " pilihan
     case $pilihan in
-        1) base-inst
+        1) SET_SERVICES
         ;;
-        2) post-inst
+        2) SET_USER
         ;;
-        3) after-inst
-        ;;
+
         [Qq]*) clear
-        exit
+        MAIN_MENU
         ;;
-        *) error
+        *) clear
+        read -p "
+$ERROR " ret
+            case $ret in
+                *) AFTER_INST
+                ;;
+            esac
         ;;
     esac
+}
+#     3.1. Mengaktifkan Services
+SET_SERVICES () {
+clear
+read -p "
+Apakah anda ingin mengaktifkan semua services ?
 
-$DIR/./start.sh
+[Y/n] : " yn
+    case $yn in
+        [Yy]*) clear
+        ln -sf /etc/runit/sv/ntpd /run/runit/service
+        ln -sf /etc/runit/sv/NetworkManager /run/runit/service
+        ln -sf /etc/runit/sv/cupsd /run/runit/service
+        ln -sf /etc/runit/sv/sshd /run/runit/service
+        nmtui
+        read -p "
+Semua services sudah berhasil diaktifkan
+tekan enter untuk kembali " ret
+            case $ret in
+                *) AFTER_INST
+                ;;
+            esac
+        ;;
+        [Nn]*) clear
+        AFTER_INST
+        ;;
+        *) clear
+        read -p "
+$ERROR " ret
+            case $ret in
+                *) SET_SERVICES
+                ;;
+            esac
+        ;;
+    esac
+}
+#     3.2. Membuat User Baru
+SET_USER () {
+clear
+read -p "
+Apakah anda ingin membuat user baru ?
+
+[Y/n] : " yn
+    case $yn in
+        [Yy]*) clear
+        read -p "
+Masukkan nama user baru : " name
+        useradd -m $name -G wheel
+        read -p "
+Apakah anda ingin menjadikan $name menjadi sudoer?
+
+[Y/n] : " yn
+            case $yn in
+                [Yy]*) vim /etc/sudoers
+                read -p "
+Membuat user baru berhasil
+Tekan enter untuk kembali " ret
+                    case $ret in
+                        *) AFTER_INST
+                        ;;
+                    esac
+                ;;
+                [Nn]*) clear
+                read -p "
+Membuat user baru berhasil
+Tekan enter untuk kembali " ret
+                    case $ret in
+                        *) AFTER_INST
+                        ;;
+                    esac
+                ;;
+                *) clear
+                read -p "
+$ERROR " ret
+                    case $ret in
+                        *) SET_USER
+                        ;;
+                    esac
+                ;;
+            esac
+        ;;
+        [Nn]*) clear
+        AFTER_INST
+        ;;
+        *) clear
+        read -p "
+$ERROR " ret
+            case $ret in
+                *) SET_USER
+                ;;
+            esac
+        ;;
+    esac
+}
+MAIN_MENU
